@@ -6,14 +6,36 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure("2") do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
+    config.vm.define "default" do |default|
+        default.vm.box = "ubuntu/xenial64"
+        default.vm.network "private_network", ip: "192.168.33.10"
+        config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: true
+        default.vm.synced_folder ".", "/var/www"
+        end
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "ubuntu/xenial64"
 
+   # Install Docker
+    config.vm.provision "docker" do |docker|
+        docker.build_image "/var/www/docker/nginx", args: "-t smadocker"
+        docker.run "smadocker", args: "-p 80:80"
+        end
+    config.vm.provision "shell", inline: <<-SHELL
+          apt-get update
+          apt-get install software-properties-common
+          apt-add-repository --yes --update ppa:ansible/ansible
+          apt-get install -y vim ansible
+        SHELL
+
+=begin     config.vm.define "nginx" do |nginx|
+        nginx.vm.provider "docker" do |docker|
+            docker.image = "smadocker"
+            docker.create_args = %w(--volumes-from="app")
+            docker.ports = %w(80:80)
+            docker.vagrant_vagrantfile = __FILE__
+            end
+        end
+=end
+end
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
@@ -63,10 +85,3 @@ Vagrant.configure("2") do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
-   config.vm.provision "shell", inline: <<-SHELL
-     apt-get update
-     apt-get install software-properties-common
-     apt-add-repository --yes --update ppa:ansible/ansible
-     apt-get install -y vim ansible
-   SHELL
-end
