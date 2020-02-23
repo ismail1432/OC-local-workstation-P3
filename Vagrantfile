@@ -6,18 +6,17 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure("2") do |config|
-    config.vm.define "default" do |default|
-        default.vm.box = "ubuntu/xenial64"
-        default.vm.network "private_network", ip: "192.168.33.10"
-        config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: true
-        default.vm.synced_folder ".", "/var/www"
-        end
-
-
+    config.vm.box = "ubuntu/xenial64"
+    config.vm.network "private_network", ip: "192.168.33.10"
+    config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: true
+    config.vm.synced_folder ".", "/var/www"
    # Install Docker
     config.vm.provision "docker" do |docker|
-        docker.build_image "/var/www/docker/nginx", args: "-t smadocker"
-        docker.run "smadocker", args: "-p 80:80"
+        docker.build_image "/var/www/docker/nginx",
+            args: "-t smadocker"
+        docker.run "smadocker",
+            images: "smadocker:latest",
+            args: "-p 80:80"
         end
     config.vm.provision "shell", inline: <<-SHELL
           apt-get update
@@ -25,16 +24,6 @@ Vagrant.configure("2") do |config|
           apt-add-repository --yes --update ppa:ansible/ansible
           apt-get install -y vim ansible
         SHELL
-
-=begin     config.vm.define "nginx" do |nginx|
-        nginx.vm.provider "docker" do |docker|
-            docker.image = "smadocker"
-            docker.create_args = %w(--volumes-from="app")
-            docker.ports = %w(80:80)
-            docker.vagrant_vagrantfile = __FILE__
-            end
-        end
-=end
 end
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
